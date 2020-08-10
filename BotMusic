@@ -1,0 +1,47 @@
+from bs4 import BeautifulSoup
+import re
+import requests
+import vk_api
+from vk_api import VkApi
+from vk_api.longpoll import VkLongPoll, VkEventType
+from vk_api.utils import get_random_id
+vk_session = vk_api.VkApi(token = '')
+longpoll = VkLongPoll(vk_session)
+vk = vk_session.get_api()
+for event in longpoll.listen():
+         if event.type == VkEventType.MESSAGE_NEW and event.to_me and event.text:
+               r = event.text
+               if r == 'песня':
+                   print(r)
+                   vk.messages.send( #Отправляем сообщение
+                        user_id=event.user_id,
+                        random_id = get_random_id(),
+                        message='Ваш текст',
+                        )
+                   for event in longpoll.listen():
+                    if event.type == VkEventType.MESSAGE_NEW and event.to_me and event.text:
+                        r = event.text
+                        p = requests.get('https://tekstovoi.ru/search?q='+ r)
+                        headers = { 'accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                                   'user-agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.116 Safari/537.36 OPR/67.0.3575.130' }
+                        b_url = p.url 
+                        def covid(b_url,headers):
+                            session = requests.session()
+                            request = session.get(b_url, headers = headers)
+                            if request.status_code == 200:
+                                    soup = BeautifulSoup(request.content, 'html.parser')
+                                    df = soup.find('ul', attrs={'id' : 'search'} ) 
+                                    t = df.text
+                                    vk.messages.send( #Отправляем сообщение
+                                        user_id=event.user_id,
+                                        random_id = get_random_id(),
+                                        message=t,
+                                        )
+                                
+                            else:
+                                print('Ошибка соединения! ')                  
+                        covid(b_url,headers)
+                        break
+               
+               else:
+                  pass
